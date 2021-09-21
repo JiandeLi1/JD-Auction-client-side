@@ -1,0 +1,13 @@
+.routeLink{
+    text-decoration: none;
+    outline: none;
+    color:#2d61f1;
+}
+
+.routeLink:visited{
+    color:#2d61f1;
+}
+
+.routeLink:hover{
+    color:white;
+}
