@@ -5,9 +5,14 @@ import {  ethers } from 'ethers'
 import Modal from '@material-ui/core/Modal';
 import { useTimer } from 'react-timer-hook'
 import TextField from '@mui/material/TextField';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
 
 const ProductCondition =['New' , 'Used']
-const font ="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+const font = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+const Alert = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 const ProductContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -131,7 +136,8 @@ function MyTimer({ expiryTimestamp }) {
 const Address = process.env.REACT_APP_Contract_Address
 export default function BidProduct({ item }) {
     const [open, setOpen] = useState(false)
-    
+    const [openAlert, setOpenAlert] = useState(false);
+    const [error, setError] = useState(false);
     const [bidValue, setBidValue] = useState(0)
     const time = new Date(item[6].toNumber()*1000)
     
@@ -146,6 +152,13 @@ export default function BidProduct({ item }) {
         setOpen(false);
     };
 
+    const handleCloseAlert = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpenAlert(false);
+  };
     
 
 
@@ -168,8 +181,11 @@ export default function BidProduct({ item }) {
                     { value: ethers.utils.parseEther(bidValue) }
                 )
                 setOpen(false)
+                setError(false);
+                setOpenAlert(true);
             } catch (err) {
-                console.log(err)
+               setError(true);
+               setOpenAlert(true);
             }
         }
     }
@@ -246,6 +262,21 @@ export default function BidProduct({ item }) {
                     </ModalTemplateRight>
                 </ModalTemplate>
             </Modal>
+            <Snackbar
+                anchorOrigin={{ vertical:'bottom', horizontal:'center' }}
+                open={openAlert}
+                autoHideDuration={6000}
+                onClose={handleCloseAlert}>
+                {error ? 
+                    <Alert severity="error" onClose={handleCloseAlert} sx={{ width: '100%' }}>
+                        Error was came! Make sure you are not the product provider or your bid value larger than start price!
+                    </Alert> :
+                    <Alert severity="success" onClose={handleCloseAlert} sx={{ width: '100%' }}>
+                        Bid Successful!
+                    </Alert> 
+                }
+                
+            </Snackbar>
 
             
         </div>

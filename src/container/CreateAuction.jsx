@@ -14,6 +14,12 @@ import AdapterDateFns from '@material-ui/lab/AdapterDateFns';
 import LocalizationProvider from '@material-ui/lab/LocalizationProvider';
 import DateTimePicker from '@material-ui/lab/DateTimePicker'
 import TextareaAutosize from '@mui/material/TextareaAutosize';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+
+const Alert = React.forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
 
 const Title = styled.h1`
     width:calc(100vw - 20px);
@@ -81,7 +87,8 @@ const Address = process.env.REACT_APP_Contract_Address
 const client = create('https://ipfs.infura.io:5001/api/v0')
 
 export default function CreateAuction() {
-    const [fileUrl, setFileUrl] = useState(`https://bafybeiecvlsxvcqp2waezkdgliynmgkxytaohvw6iyfnddfnv3zdq6ieeu.ipfs.infura-ipfs.io/`)
+    // `https://bafybeiecvlsxvcqp2waezkdgliynmgkxytaohvw6iyfnddfnv3zdq6ieeu.ipfs.infura-ipfs.io/`
+    const [fileUrl, setFileUrl] = useState( ``)
     const uploadPhoto = useRef(null)
     const [name, setName] = useState()
     const [desc, setDesc] = useState()
@@ -90,24 +97,38 @@ export default function CreateAuction() {
     const [condition, setCondition] = useState(0)
     const [startTime, setStartTime] = useState(new Date())
     const [endTime, setEndTime] = useState('0.00347')
+    const [openAlert, setOpenAlert] = useState(false);
+    const [error, setError] = useState(false);
     
     const requestAccount = async () => {
         await window.ethereum.request({ method: 'eth_requestAccounts' })
     }
+    const photoChange = async () => {
+        const file = uploadPhoto.current.files[0]
+        
+        try {
+            const added = await client.add(file)
+            const url = `https://ipfs.infura.io/ipfs/${added.path}`
+            await setFileUrl(url)
+        } catch (error) {
+            console.log('Error uploading file ',error )
+        }
+    }
+
+
+    const handleCloseAlert = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpenAlert(false);
+   };
 
     const formSubmit = async (e) => {
         e.preventDefault();
         // const file = uploadPhoto.current.files[0]
-        // console.log(file)
-        // try {
-        //     const added = await client.add(file)
-        //     const url = `https://ipfs.infura.io/ipfs/${added.path}`
-        //     console.log(url)
-        //     await setFileUrl(url)
-        //     console.log(fileUrl)
-        // } catch (error) {
-        //     console.log('Error uploading file ',error )
-        // }
+        // // console.log(file)
+        
         if (typeof window.ethereum !== 'undefined') {
             await requestAccount()
             const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -134,9 +155,12 @@ export default function CreateAuction() {
                      ethers.utils.parseEther(`${startPrice}`),
                     condition
                 )
-                
+                setError(false);
+                setOpenAlert(true);
             } catch (err) {
                 console.log('Pleas enter the correct type for options!')
+                setError(true);
+                setOpenAlert(true);
             }
         }
     }
@@ -174,7 +198,12 @@ export default function CreateAuction() {
                     </InputContainer>
                     <InputContainer>
                         <InputPicture for="product-img">Upload product photo</InputPicture>
-                        <input type="file" style={{display:"none"}} id="product-img" ref={ uploadPhoto }/>
+                                    <input type="file"
+                                        style={{ display: "none" }}
+                                        id="product-img"
+                                        ref={uploadPhoto}
+                                        onChange={ photoChange }
+                                    />
                     </InputContainer>
                     {/* <InputContainer>
                                     
@@ -282,6 +311,21 @@ export default function CreateAuction() {
             </Container>
 
             {/* {fileUrl ? <img src={ fileUrl }></img> : <img src={ NoPicture }></img>} */}
+            <Snackbar
+                anchorOrigin={{ vertical:'bottom', horizontal:'center' }}
+                open={openAlert}
+                autoHideDuration={6000}
+                onClose={handleCloseAlert}>
+                {error ? 
+                    <Alert severity="error" onClose={handleCloseAlert} sx={{ width: '100%' }}>
+                        Error was came! Auction wasn't created successful!
+                    </Alert> :
+                    <Alert severity="success" onClose={handleCloseAlert} sx={{ width: '100%' }}>
+                        Auction was created Successful!
+                    </Alert> 
+                }
+                
+            </Snackbar>
             
         </div>
     )
